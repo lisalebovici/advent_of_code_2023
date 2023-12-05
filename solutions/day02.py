@@ -119,27 +119,41 @@ if __name__ == '__main__':
         'Game 100: 11 red, 1 blue, 2 green; 3 red, 3 green; 1 blue, 8 red, 4 green; 5 green, 5 blue, 1 red; 2 green, 1 red, 6 blue; 2 green, 8 red, 1 blue'
     ]
 
+    # part 1
+    # red_max = 12
+    # green_max = 13
+    # blue_max = 14
+    # valid_games = []
 
-    red_max = 12
-    green_max = 13
-    blue_max = 14
+    power_sets = []
 
-    valid_games = []
     for line in text:
         game, rounds = line.split(': ')
         rounds = rounds.split('; ')
 
-        valid_game = True
+        # part 2
+        red_max = 0
+        green_max = 0
+        blue_max = 0
+
+        # valid_game = True
         for rnd in rounds:
             red = parse_cubes(rnd, 'red')
             green = parse_cubes(rnd, 'green')
             blue = parse_cubes(rnd, 'blue')
-            if red > red_max or green > green_max or blue > blue_max:
-                valid_game = False
-                break
-        if valid_game:
-            game_num = parse_game(game)
-            valid_games.append(game_num)
+            red_max = max(red, red_max)
+            green_max = max(green, green_max)
+            blue_max = max(blue, blue_max)
+            # if red > red_max or green > green_max or blue > blue_max:
+                # valid_game = False
+                # break
+        # if valid_game:
+            # game_num = parse_game(game)
+            # valid_games.append(game_num)
+        power_sets.append(red_max * green_max * blue_max)
 
-    print(sum(valid_games))
-    print(valid_games)
+    # print(sum(valid_games))
+    # print(valid_games)
+
+    print(sum(power_sets))
+    print(power_sets)
