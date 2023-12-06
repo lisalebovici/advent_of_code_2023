@@ -30,5 +30,19 @@ def main():
     print(card_points)
     print(sum(card_points))
 
+    # Part 2
+    card_copies = [1] * len(cards)
+    for i, card in enumerate(cards):
+        winning_numbers, my_numbers = re.search(pattern, card).groups()
+        winning_numbers = clean_number_list(winning_numbers)
+        my_numbers = clean_number_list(my_numbers)
+        overlapping_numbers = winning_numbers.intersection(my_numbers)
+        num_overlap = len(overlapping_numbers)
+        copies = card_copies[i]
+        for j in range(i+1, i+1+num_overlap):
+            card_copies[j] += copies
+    print(card_copies)
+    print(sum(card_copies))
+
 if __name__ == '__main__':
     main()
