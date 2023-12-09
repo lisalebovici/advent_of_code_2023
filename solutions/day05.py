@@ -8,19 +8,20 @@ def get_destination_from_source(d_almanac, mapping, source):
             destination = dest + diff
     return destination
 
-def get_location(start, end, d_almanac, mappings, m_idx, max_idx):
+def get_location(start, end, d_almanac, mappings, m_idx, max_idx, alm_idx):
     mapping = mappings[m_idx]
-    print(mapping)
     d_map = d_almanac[mapping]
-    for (dest, src, rng) in d_map:
+    len_map = len(d_map)
+    for i, (dest, src, rng) in enumerate(d_map):
         src_end = src + rng - 1
         dest_end = dest + rng - 1
         # scenario 1: there's no overlap, so just continue on to next mapping
         if start > src_end or end < src:
+            if i < len_map - 1:
+                continue
             if m_idx < max_idx:
-                print(start)
                 return get_location(start, end, d_almanac, mappings,
-                                    m_idx + 1, max_idx)
+                                    m_idx + 1, max_idx, 0)
             else:
                 return start
         # scenario 2: the seeds are completely contained in source range,
@@ -28,49 +29,80 @@ def get_location(start, end, d_almanac, mappings, m_idx, max_idx):
         elif src <= start and end <= src_end:
             diff = start - src
             if m_idx < max_idx:
-                print(dest+diff)
                 return get_location(dest + diff, dest + diff + (end - start),
                                     d_almanac, mappings, m_idx + 1,
-                                    max_idx)
+                                    max_idx, 0)
             else:
                 return dest + diff
         # scenario 3: partial overlap over beginning of source range,
         # need to split into two ranges and recurse
         elif start < src and end <= src_end:
             if m_idx < max_idx:
-                return min(get_location(start, src - 1, d_almanac, mappings,
-                                        m_idx + 1, max_idx),
-                           get_location(dest, dest + (end - src), d_almanac,
-                                        mappings, m_idx + 1, max_idx))
+                if i < len_map - 1:
+                    return min(get_location(start, src - 1, d_almanac, mappings,
+                                            m_idx, max_idx, i + 1),
+                               get_location(dest, dest + (end - src), d_almanac,
+                                            mappings, m_idx + 1, max_idx, 0))
+                else:
+                    return min(get_location(start, src - 1, d_almanac, mappings,
+                                            m_idx + 1, max_idx, 0),
+                               get_location(dest, dest + (end - src), d_almanac,
+                                            mappings, m_idx + 1, max_idx, 0))
             else:
-                return min(start, dest)
+                if i < len_map - 1:
+                    return min(get_location(start, src - 1, d_almanac, mappings,
+                                            m_idx, max_idx, i + 1),
+                               dest)
+                else:
+                    return min(start, dest)
         # scenario 4: partial overlap over end of source range,
         # need to split into two ranges and recurse
         elif src <= start and src_end < end:
             if m_idx < max_idx:
-                return min(get_location(dest + (start - src), dest_end,
-                                        d_almanac, mappings, m_idx + 1,
-                                        max_idx),
-                           get_location(src_end + 1, end, d_almanac, mappings,
-                                        m_idx + 1, max_idx))
+                if i < len_map - 1:
+                    return min(get_location(dest + (start - src), dest_end,
+                                            d_almanac, mappings, m_idx + 1,
+                                            max_idx, 0),
+                               get_location(src_end + 1, end, d_almanac, mappings,
+                                            m_idx, max_idx, i + 1))
             else:
-                return min(dest + (start - src), src_end + 1)
+                if i < len_map - 1:
+                    return min(dest + (start - src),
+                               get_location(src_end + 1, end, d_almanac, mappings,
+                                            m_idx, max_idx, i + 1))
+                else:
+                    return min(dest + (start - src), src_end + 1)
         # scenario 5: seeds fully contain source range, split into non-
         # overlapping edges and fully contained middle
         else:
             if m_idx < max_idx:
-                return min(get_location(start, src - 1, d_almanac, mappings,
-                                        m_idx + 1, max_idx),
-                           get_location(dest, dest_end, d_almanac, mappings,
-                                        m_idx + 1, max_idx),
-                           get_location(src_end + 1, end, d_almanac, mappings,
-                                        m_idx + 1, max_idx))
+                if i < len_map - 1:
+                    return min(get_location(start, src - 1, d_almanac, mappings,
+                                            m_idx, max_idx, i + 1),
+                               get_location(dest, dest_end, d_almanac, mappings,
+                                            m_idx + 1, max_idx, 0),
+                               get_location(src_end + 1, end, d_almanac, mappings,
+                                            m_idx, max_idx, i + 1))
+                else:
+                    return min(get_location(start, src - 1, d_almanac, mappings,
+                                            m_idx, max_idx, i + 1),
+                               get_location(dest, dest_end, d_almanac, mappings,
+                                            m_idx + 1, max_idx, 0),
+                               get_location(src_end + 1, end, d_almanac, mappings,
+                                            m_idx, max_idx, i + 1))
             else:
-                return min(start, dest, src_end + 1)
+                if i < len_map - 1:
+                    return min(get_location(start, src - 1, d_almanac, mappings,
+                                            m_idx, max_idx, i + 1),
+                               dest,
+                               get_location(src_end + 1, end, d_almanac, mappings,
+                                            m_idx, max_idx, i + 1))
+                else:
+                    return min(start, dest, src_end + 1)
 
 
 def main():
-    with open('../data/day05_sample.txt', 'r') as file:
+    with open('../data/day05.txt', 'r') as file:
         temp = file.read().splitlines()
 
     delimiter = ''
@@ -100,18 +132,18 @@ def main():
     ]
 
     # Part 1
-    # seeds = [int(x) for x in temp[0].split(':')[1].strip().split(' ')]
-    # locations = []
-    # for seed in seeds:
-    #     print(f'SEED: {seed}')
-    #     source = seed
-    #     for mapping in mappings:
-    #         destination = get_destination_from_source(d_almanac, mapping, source)
-    #         print(f'mapping: {mapping} | source: {source} | {destination}')
-    #         source = destination
-    #     locations.append(destination)
-    #     print()
-    # print(f'Min location: {min(locations)}')
+    seeds = [int(x) for x in temp[0].split(':')[1].strip().split(' ')]
+    locations = []
+    for seed in seeds:
+        print(f'SEED: {seed}')
+        source = seed
+        for mapping in mappings:
+            destination = get_destination_from_source(d_almanac, mapping, source)
+            print(f'mapping: {mapping} | source: {source} | {destination}')
+            source = destination
+        locations.append(destination)
+        print()
+    print(f'Part 1 min location: {min(locations)}')
 
     # Part 2
     seed_starts = [int(x) for x in temp[0].split(':')[1].strip().split(' ')[::2]]
@@ -122,14 +154,11 @@ def main():
     locations2 = []
     for seed_start, seed_range in seeds2:
         seed_end = seed_start + seed_range - 1
-        print(seed_end)
         min_loc_for_range = get_location(seed_start, seed_end, d_almanac,
-                                         mappings, 0, num_mappings - 1)
+                                         mappings, 0, num_mappings - 1, 0)
         locations2.append(min_loc_for_range)
-
     print(locations2)
-    print(min(locations2))
-
+    print(f'Part 2 min location: {min(locations2)}')
 
 if __name__ == '__main__':
     main()
