@@ -1,3 +1,4 @@
+import datetime
 import re
 
 def get_destination_from_source(d_almanac, mapping, source):
@@ -152,13 +153,16 @@ def main():
     num_mappings = len(mappings)
 
     locations2 = []
+    start_ts = datetime.datetime.now()
     for seed_start, seed_range in seeds2:
         seed_end = seed_start + seed_range - 1
         min_loc_for_range = get_location(seed_start, seed_end, d_almanac,
                                          mappings, 0, num_mappings - 1, 0)
         locations2.append(min_loc_for_range)
+    end_ts = datetime.datetime.now()
     print(locations2)
     print(f'Part 2 min location: {min(locations2)}')
+    print(f'Part 2 run time: {(end_ts-start_ts).microseconds/1000} ms')
 
 if __name__ == '__main__':
     main()
