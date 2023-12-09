@@ -1,10 +1,17 @@
 from collections import Counter
 
-CARD_ORDER = ['2', '3', '4', '5', '6', '7', '8', '9', 'T', 'J', 'Q', 'K', 'A']
+CARD_ORDER = ['J', '2', '3', '4', '5', '6', '7', '8', '9', 'T', 'Q', 'K', 'A']
 
-def determine_hand_type(c):
-    card_counts = sorted(list(c.values()), reverse=True)
-    max_count = card_counts[0]
+def determine_hand_type(cc):
+    if 'J' in cc.keys():
+        num_j = cc.pop('J')
+    else:
+        num_j = 0
+    card_counts = sorted(list(cc.values()), reverse=True)
+    if card_counts:
+        max_count = card_counts[0] + num_j
+    else:
+        max_count = num_j
     if max_count == 5:
         # five of a kind
         return 7
@@ -49,7 +56,6 @@ def main():
     with open('../data/day07.txt', 'r') as file:
         hands_and_bids = file.read().splitlines()
 
-    # Part 1
     hands = [h.split(' ')[0] for h in hands_and_bids]
     bids = [int(h.split(' ')[1]) for h in hands_and_bids]
     counts = [Counter(h) for h in hands]
@@ -58,7 +64,7 @@ def main():
     hand_ranks = [add_hand_card_order(h) for h in hand_info]
     hand_ranks_sorted = sorted(hand_ranks, key=lambda x: (x[2], x[3], x[4], x[5], x[6], x[7]))
     total_winnings = sum([h[0]*(i+1) for i, h in enumerate(hand_ranks_sorted)])
-    print(f'Part 1: {total_winnings}')
+    print(f'Total winnings: {total_winnings}')
 
 if __name__ == '__main__':
     main()
