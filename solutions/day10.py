@@ -76,21 +76,58 @@ def main():
     #     '|F--J',
     #     'LJ.LJ'
     # ]
-    with open('../data/day10.txt', 'r') as f:
-        loop = f.read().splitlines()
+    # loop = [
+    #     '...........',
+    #     '.S-------7.',
+    #     '.|F-----7|.',
+    #     '.||.....||.',
+    #     '.||.....||.',
+    #     '.|L-7.F-J|.',
+    #     '.|..|.|..|.',
+    #     '.L--J.L--J.',
+    #     '...........',
+    # ]
+    # loop = [
+    #     '..........',
+    #     '.S------7.',
+    #     '.|F----7|.',
+    #     '.||....||.',
+    #     '.||....||.',
+    #     '.|L-7F-J|.',
+    #     '.|..||..|.',
+    #     '.L--JL--J.',
+    #     '..........',
+    # ]
+    loop = [
+        '.F----7F7F7F7F-7....',
+        '.|F--7||||||||FJ....',
+        '.||.FJ||||||||L7....',
+        'FJL7L7LJLJ||LJ.L-7..',
+        'L--J.L7...LJS7F-7L7.',
+        '....F-J..F7FJ|L7L7L7',
+        '....L7.F7||L7|.L7L7|',
+        '.....|FJLJ|FJ|F7|.LJ',
+        '....FJL-7.||.||||...',
+        '....L---J.LJ.LJLJ...'
+    ]
+    # with open('../data/day10.txt', 'r') as f:
+    #     loop = f.read().splitlines()
     loop = np.array([list(row) for row in loop])
     steps_from_start = np.ones(loop.shape) * -1
     start_pos = tuple([x[0] for x in np.where(loop == 'S')])
     steps_from_start[start_pos] = 0
     found_farthest_point = False
     num_steps = 0
+    enclosure = [start_pos]
     while not found_farthest_point:
         if num_steps == 0:
             next_pos1, next_pos2 = find_next_points(loop, steps_from_start, start_pos)
         else:
             next_pos1 = find_next_points(loop, steps_from_start, pos1)[0]
             next_pos2 = find_next_points(loop, steps_from_start, pos2)[0]
-        print(f'next_pos1: {next_pos1} | next_pos2: {next_pos2}')
+        enclosure.append(next_pos1)
+        enclosure.append(next_pos2)
+        # print(f'next_pos1: {next_pos1} | next_pos2: {next_pos2}')
         num_steps += 1
         if next_pos1 == next_pos2: #and steps_from_start[next_points[0]] == -1:
             steps_from_start[next_pos1] = num_steps
@@ -103,9 +140,145 @@ def main():
                 pos1 = next_pos1
                 steps_from_start[next_pos2] = num_steps
                 pos2 = next_pos2
-        print(steps_from_start)
+        # print(steps_from_start)
     print(f'Part 1: {int(np.max(steps_from_start))}')
+    enclosure = set(enclosure)
+
+    # check if we cross inside enclosure and count points until we cross again
+    status = loop.copy()
+    inside_loop = False
+    loop_status = 'outside_loop'
+    steps_on_enclosure = 0
+    # on_enclosure = loop[start_pos] in enclosure
+    for i in range(loop.shape[0]):
+        for j in range(loop.shape[1]):
+            cur_pos = (i, j)
+            print(f'cur_pos: {cur_pos}')
+            # print('** BEFORE **')
+            # print(f'inside_loop: {inside_loop}')
+            # print(f'steps_on_enclosure: {steps_on_enclosure}')
+
+
+            # only want to switch to outside loop if steps on enclosure == 1?
+
+            # passing from outside loop to enclosure
+            if not inside_loop and cur_pos in enclosure and loop_status == 'outside_loop' and steps_on_enclosure == 0:
+                print('CASE 1')
+                steps_on_enclosure += 1
+                loop_status = 'on_enclosure'
+            # passing from enclosure to inside loop
+            elif not inside_loop and cur_pos not in enclosure and loop_status == 'on_enclosure' and steps_on_enclosure == 1:
+                print('CASE 2')
+                inside_loop = True
+                steps_on_enclosure = 0
+                status[cur_pos] = 'I'
+                loop_status = 'inside_loop'
+            # staying in loop
+            elif inside_loop and cur_pos not in enclosure and loop_status == 'inside_loop' and steps_on_enclosure == 0:
+                print('CASE 3')
+                status[cur_pos] = 'I'
+            # passing from inside loop to enclosure
+            elif inside_loop and cur_pos in enclosure and loop_status == 'inside_loop':
+                print('CASE 4')
+                steps_on_enclosure += 1
+                loop_status = 'on_enclosure'
+            # passing from enclosure to outside loop
+            elif inside_loop and cur_pos not in enclosure and loop_status == 'on_enclosure' and steps_on_enclosure == 1:
+                print('CASE 5')
+                inside_loop = False
+                steps_on_enclosure = 0
+                status[cur_pos] = 'O'
+                loop_status = 'outside_loop'
+            # passing over enclosure but staying in inside loop
+            elif inside_loop and cur_pos not in enclosure and loop_status == 'on_enclosure' and steps_on_enclosure > 1:
+                print('CASE 6')
+                steps_on_enclosure = 0
+                loop_status = 'inside_loop'
+                status[cur_pos] = 'I'
+            # traversing enclosure
+            elif cur_pos in enclosure and loop_status == 'on_enclosure' and steps_on_enclosure > 0:
+                print('CASE 7')
+                steps_on_enclosure += 1
+                pass
+            elif cur_pos not in enclosure and loop_status == 'on_enclosure' and steps_on_enclosure > 0:
+                print('CASE 8')
+                steps_on_enclosure = 0
+                loop_status = 'outside_loop'
+                status[cur_pos] = 'O'
+            # outside loop
+            else:
+                print('CASE 9')
+                status[cur_pos] = 'O'
+            print('** AFTER **')
+            print(f'inside_loop: {inside_loop}')
+            print(f'steps_on_enclosure: {steps_on_enclosure}')
+            print(f'on_enclosure: {cur_pos in enclosure}')
+            print(f'loop_status: {loop_status}')
+            print()
+
+            # if cur_pos in enclosure:
+            #     steps_on_enclosure += 1
+
+            # # we were outside the enclosure, now we're on it
+            # if loop[i, j] in enclosure and not inside_loop and not on_enclosure:
+            #     if 
+            #     on_enclosure = True
+            # # we're traversing the enclosure, haven't passed inside yet
+            # if loop[i, j] in enclosure and not inside_loop and on_enclosure:
+            #     continue
+            # # we were on the enclosure, now we're not
+            # if loop[i, j] not in enclosure and not inside_loop and on_enclosure:
+            #     on_enclosure = False
+
+    print(status)
+    num_tiles_in_loop = np.sum(status == 'I')
+    print(f'Part 2: {num_tiles_in_loop}')
+    breakpoint()
 
 
 if __name__ == '__main__':
     main()
+
+
+
+
+# # passing from outside loop to enclosure
+# if not inside_loop and cur_pos in enclosure and steps_on_enclosure == 0:
+#     print('CASE 1')
+#     steps_on_enclosure += 1
+#     loop_status = 'on_enclosure'
+# # passing from enclosure to inside loop
+# elif not inside_loop and cur_pos not in enclosure and steps_on_enclosure == 1:
+#     print('CASE 2')
+#     inside_loop = True
+#     steps_on_enclosure = 0
+#     status[cur_pos] = 'I'
+#     loop_status = 'inside_loop'
+# # staying in loop
+# elif inside_loop and cur_pos not in enclosure and steps_on_enclosure == 0:
+#     print('CASE 3')
+#     status[cur_pos] = 'I'
+# # passing from inside loop to enclosure
+# elif inside_loop and cur_pos in enclosure:
+#     print('CASE 4')
+#     steps_on_enclosure += 1
+#     loop_status = 'on_enclosure'
+# # passing from enclosure to outside loop
+# elif inside_loop and cur_pos not in enclosure:
+#     print('CASE 5')
+#     inside_loop = False
+#     steps_on_enclosure = 0
+#     status[cur_pos] = 'O'
+#     loop_status = 'outside_loop'
+# # traversing enclosure
+# elif cur_pos in enclosure and steps_on_enclosure > 0:
+#     print('CASE 6')
+#     steps_on_enclosure += 1
+# elif cur_pos not in enclosure and steps_on_enclosure > 0:
+#     print('CASE 7')
+#     steps_on_enclosure = 0
+#     loop_status = 'outside_loop'
+# # outside loop
+# else:
+#     print('CASE 8')
+#     status[cur_pos] = 'O'
